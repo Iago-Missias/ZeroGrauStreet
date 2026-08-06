@@ -4,13 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev
 export default defineConfig({
-  base: './', // Garante os caminhos relativos corretos para HTTPS
+  // MUDADO AQUI: Remova o nome do repositório e deixe apenas a barra para o Netlify
+  base: '/', 
+  
   plugins: [
     react(),
-    tailwindcss() // Garante o suporte ao Tailwind v4
+    tailwindcss() 
   ],
   css: {
-    // Corrige os erros de [lightningcss] com as diretivas do Tailwind v4 (@theme)
     transformer: 'postcss' 
   }
 })

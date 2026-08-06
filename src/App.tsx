@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createHashRouter } from 'react-router-dom'; // ◄ Alterado aqui
 import { Home } from './pages/home';
 import { Login } from './pages/login';
 import { Register } from './pages/register'; 
@@ -6,11 +6,12 @@ import { RoupaDetail } from './pages/roupa';
 import { Layout } from './components/layout';
 import { Dashboard } from './pages/dashboard';
 import { New } from './pages/dashboard/new';
-import { Sobre } from './pages/sobre'; // 1. ADICIONE ESTA IMPORTAÇÃO
+import { Sobre } from './pages/sobre'; 
 
 import Private from './routes/Private';
 
-const router = createBrowserRouter([
+// ◄ Alterado de createBrowserRouter para createHashRouter
+const router = createHashRouter([
   {
     element: <Layout/>,
     children: [
@@ -19,7 +20,7 @@ const router = createBrowserRouter([
         element: <Home/>
       },
       {
-        path: "/sobre", // 2. ADICIONE ESTA NOVA ROTA AQUI
+        path: "/sobre", 
         element: <Sobre/>
       },
       {

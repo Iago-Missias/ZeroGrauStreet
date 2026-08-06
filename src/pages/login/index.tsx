@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 // CORREÇÃO 1: Importar o cliente 'supabase' correto no lugar do antigo 'auth'
 import { supabase } from '../../services/supabaseConnection';
 
+
 // COLOQUE AQUI O ÚNICO E-MAIL E SENHA PERMITIDOS NO SITE
 const ADMIN_EMAIL = "zero.grau20260208@gmail.com";
 const ADMIN_PASSWORD = "Senha12345678"; 
