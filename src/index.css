@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+body{
+  background-color: black;
+  color: white;
+}
+@theme {
+  --animate-marquee: spinMarquee 20s linear infinite;
+
+  @keyframes spinMarquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+  }
+}
