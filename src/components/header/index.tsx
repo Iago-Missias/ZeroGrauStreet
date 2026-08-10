@@ -1,11 +1,13 @@
 import { useContext } from 'react'
 import { AuthContext } from '../../contexts/AuthContext'
 import logoImg from '../../assets/logo.png'
-import { Link } from 'react-router-dom' 
-import { FiUser, FiInstagram } from 'react-icons/fi' // Removido FiLogIn
+import { Link, useLocation } from 'react-router-dom' // Importe useLocation
+import { FiUser, FiInstagram } from 'react-icons/fi'
 
 export function Header() {
   const { signed, loading } = useContext(AuthContext);
+  const location = useLocation(); // Pega a rota atual
+  const isHomePage = location.pathname === '/'; // Verifica se é a home
 
   return (
     <div className="w-full fixed top-0 left-0 z-50 flex items-center justify-center h-16 bg-black drop-shadow">
@@ -27,8 +29,8 @@ export function Header() {
                     </a>
                 </nav>
 
-                {/* Exibe a barra divisória e o ícone do painel apenas se o usuário estiver logado */}
-                {!loading && signed && (
+                {/* Só mostra o ícone do painel se NÃO estiver na home E o usuário estiver logado */}
+                {!loading && signed && !isHomePage && (
                   <>
                     <div className="h-6 w-[1px] bg-zinc-700"></div>
                     
@@ -47,4 +49,3 @@ export function Header() {
     </div>
   );
 }
-
