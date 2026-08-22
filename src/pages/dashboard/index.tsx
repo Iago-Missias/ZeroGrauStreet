@@ -1,11 +1,12 @@
-import { useEffect, useState, useContext } from 'react' 
-import { Container } from "../../components/container"
-import { DashboardHeader } from '../../components/panelheader'
-import { FiTrash2 } from 'react-icons/fi'
-import { supabase } from '../../services/supabaseConnection' 
-import { AuthContext } from '../../contexts/AuthContext'
+import { useEffect, useState, useContext } from 'react';
+import { Container } from "../../components/container";
+import { DashboardHeader } from '../../components/panelheader';
+import { FiTrash2 } from 'react-icons/fi';
+import { supabase } from '../../services/supabaseConnection';
+import { AuthContext } from '../../contexts/AuthContext';
 
-
+// Importe sua imagem padrão (caso não tenha)
+// import camisaImg from '../../assets/camisa.png';
 
 interface RoupaProps {
   id: string | number; 
@@ -15,6 +16,7 @@ interface RoupaProps {
   price: string | number;
   images: ImageRoupaProps[];
   uid: string;
+  estilo: string; // 🔥 NOVO CAMPO
 }
 
 interface ImageRoupaProps {
@@ -24,7 +26,7 @@ interface ImageRoupaProps {
 }
 
 export function Dashboard() {
-  const [roupas, setRoupas] = useState<RoupaProps[]>([]); 
+  const [roupas, setRoupas] = useState<RoupaProps[]>([]);
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -56,31 +58,23 @@ export function Dashboard() {
     if (!confirmou) return;
 
     try {
-      console.log("ID do Produto clicado:", roupa.id);
-      console.log("UID do Produto no banco:", roupa.uid);
-      console.log("Seu UID de usuário logado atual:", user?.id || user?.uid);
-
-      // 1. Remove imagens do Storage se existirem
       if (roupa.images && roupa.images.length > 0) {
         const imagensParaDeletar = roupa.images.map(img => img.name);
         await supabase.storage.from('ZeroGrau').remove(imagensParaDeletar);
       }
 
-      // 2. Remove o registro definitivo da tabela
       const { error } = await supabase
         .from('roupas')
         .delete()
-        .eq('id', roupa.id); 
+        .eq('id', roupa.id);
 
       if (error) {
         alert(`O banco recusou a deleção: ${error.message}`);
         return;
       }
 
-      // 3. Atualiza o estado local imediatamente
       setRoupas(prev => prev.filter(item => item.id !== roupa.id));
       alert("Produto deletado com sucesso!");
-
     } catch (err) {
       console.error("Erro ao deletar item:", err);
       alert("Erro interno no código ao tentar deletar.");
@@ -104,7 +98,7 @@ export function Dashboard() {
     <Container>
       <DashboardHeader/>
       
-   
+      {/* NENHUM FILTRO AQUI, APENAS A LISTAGEM COMPLETA */}
 
       <main className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
         {roupas.map((roupa) => (
@@ -119,9 +113,8 @@ export function Dashboard() {
               </button>
               
               <div className="bg-zinc-900 rounded-t-lg p-2 h-48 flex items-center justify-center overflow-hidden">
-                {/* CORRIGIDO: Acesso limpo para ler a URL direto da lista */}
                 <img 
-                  src={roupa.images && roupa.images.length > 0 ? roupa.images[0].url : camisaImg} 
+                  src={roupa.images && roupa.images.length > 0 ? roupa.images[0].url : 'caminho/para/imagem-padrao.jpg'} 
                   alt={roupa.name} 
                   className="w-40 h-40 object-contain mx-auto transition-transform duration-300 hover:scale-105" 
                 />
@@ -131,7 +124,7 @@ export function Dashboard() {
               
               <div className="flex flex-col px-3 mt-1">
                 <span className="text-zinc-500 text-sm font-medium">
-                  Modelo: {roupa.model} | Marca: {roupa.marca}
+                  Modelo: {roupa.model} | Marca: {roupa.marca} | Estilo: {roupa.estilo}
                 </span>
                 <strong className="text-black font-bold text-xl mt-2">
                   R$ {formatPrice(roupa.price)}
@@ -148,5 +141,5 @@ export function Dashboard() {
         )}
       </main>
     </Container>
-  )
+  );
 }

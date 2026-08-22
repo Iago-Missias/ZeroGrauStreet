@@ -24,7 +24,7 @@ export function Footer() {
           <div className="flex flex-col gap-1.5 text-sm">
             <div className="flex items-center gap-2">
               <span className="text-sky-400">●</span>
-              <span>PIX (10% OFF à vista)</span>
+              <span>PIX </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sky-400">●</span>
@@ -36,7 +36,7 @@ export function Footer() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sky-400">●</span>
-              <span>Dinheiro (5% OFF)</span>
+              <span>Dinheiro</span>
             </div>
            
           </div>
@@ -48,13 +48,13 @@ export function Footer() {
           <div className="flex flex-col gap-1 text-sm">
             <p className="text-zinc-300">Cartão de Crédito:</p>
             <ul className="list-disc list-inside text-zinc-400 space-y-0.5 ml-2">
-              <li>Até <strong className="text-white">12x</strong></li>
+              <li>Até  <strong className="text-white">4x sem Juros</strong></li>
               <li>Parcelas a partir de <strong className="text-white">R$ 50,00</strong></li>
             </ul>
             
             <div className="mt-3 pt-2 border-t border-zinc-800">
-              <p className="text-emerald-400 text-xs">✦ PIX à vista: 10% de desconto</p>
-              <p className="text-emerald-400 text-xs">✦ Dinheiro: 5% de desconto</p>
+              <p className="text-emerald-400 text-xs">✦ PIX </p>
+              <p className="text-emerald-400 text-xs">✦ Dinheiro</p>
             </div>
           </div>
         </div>
@@ -86,7 +86,7 @@ export function Footer() {
 
       {/* Rodapé */}
       <div className="w-full border-t border-zinc-900 py-4 bg-zinc-950 text-center text-xs">
-        <p>&copy; {currentYear} MultiMarcas - Todos os direitos reservados.</p>
+        <p>&copy; {currentYear} ZeroGrauStreet - Todos os direitos reservados.</p>
         <p className="text-zinc-600 text-[10px] mt-1">
           * Consulte condições de parcelamento e descontos
         </p>
