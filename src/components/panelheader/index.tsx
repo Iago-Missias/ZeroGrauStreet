@@ -1,18 +1,16 @@
 import { Link } from 'react-router-dom'
-import { useContext } from 'react' // CORREÇÃO 1: Adicionado o hook useContext do React
-import { AuthContext } from '../../contexts/AuthContext' // CORREÇÃO 2: Importado o contexto global
+import { useContext } from 'react'
+import { AuthContext } from '../../contexts/AuthContext'
 
 export function DashboardHeader(){
-    // CORREÇÃO 3: Puxa a função de logout do Supabase já configurada no contexto
     const { logout } = useContext(AuthContext);
 
     async function handleLogout(){
-        // CORREÇÃO 4: Executa o logout limpo e sem dependências do Firebase
         await logout();
     }
 
     return( 
-        <div className="w-full items-center flex h-10 bg-cyan-500 font-medium gap-4 px-4 mb-4 rounded-lg text-white font-semibold shadow-[0_0_15px_rgba(6,182,212,0.6)]">
+        <div className="w-full items-center flex bg-gradient-to-r from-sky-500 to-blue-600 font-medium gap-4 px-4 py-3 mb-4 rounded-lg text-white font-semibold shadow-[0_0_15px_rgba(6,182,212,0.6)] mt-10">
             <Link to="/dashboard">
                 Dashboard
             </Link>

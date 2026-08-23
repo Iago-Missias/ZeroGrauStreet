@@ -4,7 +4,7 @@ import { supabase } from '../../services/supabaseConnection';
 import { Link } from 'react-router-dom'; 
 import camisaImg from '../../assets/NK.jpg'; 
 import { Carrossel } from '../../components/carrosel';
-import { FiSearch, FiX } from 'react-icons/fi'; // ícones para os filtros
+import { FiSearch, FiX } from 'react-icons/fi';
 
 interface RoupaProps {
   id: string;
@@ -16,7 +16,7 @@ interface RoupaProps {
   uid: string;
   whatsapp: string;
   estilo: string;
-  categoria: string; // 🔥 NOVO CAMPO
+  categoria: string;
 }
 
 interface RoupaImageProps {
@@ -29,33 +29,25 @@ export function Home() {
   const [roupas, setRoupas] = useState<RoupaProps[]>([]);
   const [loadImages, setLoadImages] = useState<string[]>([]);
   
-  // Estados para filtros
   const [busca, setBusca] = useState("");
   const [estilosSelecionados, setEstilosSelecionados] = useState<string[]>([]);
-  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<string[]>([]); // 🔥 NOVO
+  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<string[]>([]);
 
-  // Opções fixas (ALTERADAS AQUI)
-  const estilosDisponiveis = ["Casual", "Esporte", "Esporte Fino"]; // ✅ TROCAS FEITAS
-  const categoriasDisponiveis = ["Shorts", "Acessório", "Camisa", "Calça", "Cueca"]; // 🔥 NOVO
+  const estilosDisponiveis = ["Casual", "Esporte", "Esporte Fino"];
+  const categoriasDisponiveis = ["Shorts", "Acessório", "Camisa", "Calça", "Cueca"];
 
-  // Função para buscar roupas com filtros combinados
   const fetchRoupas = useCallback(async (filtroNome: string, filtroEstilos: string[], filtroCategorias: string[]) => {
     let query = supabase
       .from('roupas')
       .select('*')
       .order('created_at', { ascending: false });
 
-    // Filtro por nome
     if (filtroNome.trim() !== '') {
       query = query.ilike('name', `%${filtroNome}%`);
     }
-
-    // Filtro por estilos
     if (filtroEstilos.length > 0) {
       query = query.in('estilo', filtroEstilos);
     }
-
-    // 🔥 Filtro por categorias
     if (filtroCategorias.length > 0) {
       query = query.in('categoria', filtroCategorias);
     }
@@ -78,7 +70,7 @@ export function Home() {
         uid: item.uid || "",
         whatsapp: item.whatsapp || "",
         estilo: item.estilo || "Não definido",
-        categoria: item.categoria || "Não definida", // 🔥 MAPEIA CATEGORIA
+        categoria: item.categoria || "Não definida",
       }));
 
       setRoupas(listRoupas);
@@ -91,12 +83,10 @@ export function Home() {
     }
   }, []);
 
-  // Disparar quando qualquer filtro mudar
   useEffect(() => {
     fetchRoupas(busca, estilosSelecionados, categoriasSelecionadas);
   }, [busca, estilosSelecionados, categoriasSelecionadas, fetchRoupas]);
 
-  // Inscrever-se em mudanças (DELETE)
   useEffect(() => {
     const channel = supabase
       .channel('roupas-alteracoes')
@@ -137,7 +127,6 @@ export function Home() {
     return parsedPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
   }
 
-  // Funções toggle
   function toggleEstilo(estilo: string) {
     setEstilosSelecionados((prev) =>
       prev.includes(estilo) ? prev.filter((e) => e !== estilo) : [...prev, estilo]
@@ -156,7 +145,6 @@ export function Home() {
     setBusca("");
   }
 
-  // Contar filtros ativos
   const totalFiltrosAtivos = estilosSelecionados.length + categoriasSelecionadas.length + (busca.trim() !== '' ? 1 : 0);
 
   return (
@@ -166,9 +154,7 @@ export function Home() {
       </div>
 
       <Container>
-        {/* Barra de busca + filtros estilizados */}
         <section className="bg-gradient-to-r from-sky-500 to-blue-600 p-5 rounded-2xl shadow-lg w-full max-w-4xl mx-auto">
-          {/* Linha de busca */}
           <div className="flex items-center gap-2 bg-white rounded-full px-4 py-1 shadow-inner">
             <FiSearch size={20} className="text-zinc-400" />
             <input 
@@ -193,8 +179,8 @@ export function Home() {
             </button>
           </div>
 
-          {/* Filtros: Estilo + Categoria */}
-          <div className="mt-4 flex flex-wrap items-center gap-4 justify-center text-white">
+          {/* FILTROS: ALTERADO PARA FICAR ESTILOS EM CIMA E CATEGORIAS EM BAIXO NO CELULAR */}
+          <div className="mt-4 flex flex-col sm:flex-row items-center gap-4 justify-center text-white">
             {/* Estilos */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">Estilo</span>
@@ -211,7 +197,8 @@ export function Home() {
               ))}
             </div>
 
-            <span className="text-white/30">|</span>
+            {/* Separador - escondido no mobile */}
+            <span className="hidden sm:block text-white/30">|</span>
 
             {/* Categorias */}
             <div className="flex flex-wrap items-center gap-2">
@@ -253,7 +240,6 @@ export function Home() {
               className="block h-full transition-transform duration-300 hover:scale-102"
             >
               <section className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col gap-3 h-full select-none">
-                {/* Imagem com skeleton */}
                 <div 
                   className="w-full h-40 bg-zinc-900 rounded-lg animate-pulse"
                   style={{ display: loadImages.includes(roupa.id) ? "none" : "block" }}
@@ -285,7 +271,6 @@ export function Home() {
                   <span>{roupa.marca}</span>
                   <span className="text-zinc-400">Estilo: {roupa.estilo}</span>
                 </div>
-                {/* 🔥 EXIBE A CATEGORIA (opcional) */}
                 <div className="text-xs text-zinc-600 border-t border-zinc-800 pt-1 flex justify-end">
                   <span className="bg-zinc-800 px-2 py-0.5 rounded-full">Categoria: {roupa.categoria}</span>
                 </div>
