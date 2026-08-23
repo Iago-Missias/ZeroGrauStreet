@@ -14,7 +14,7 @@ export function Header() {
         <header className='flex w-full max-w-7xl items-center justify-between px-4 mx-auto'>
             
             <Link to="/">
-                <img src={logoImg} alt="Logo do site" className="h-12 w-auto object-contain" />
+                <img src={logoImg} alt="Logo do site" className="h-20 w-auto object-contain" />
             </Link>
 
             <div className="flex items-center gap-8">
