@@ -16,8 +16,8 @@ export function Carrossel() {
     { id: '3', url: img4, alt: 'Roupa 3' },
     { id: '4', url: img5, alt: 'Roupa 4' },
     { id: '5', url: img6, alt: 'Roupa 5' }, // Alterado de img1 para img2
-    { id: '6', url: img7, alt: 'Roupa 6' },
-    { id: '7', url: img8, alt: 'Roupa 7' },
+    { id: '6', url: img7, alt: 'Roupa 7' },
+    { id: '7', url: img8, alt: 'Roupa 8' },
    
      // Alterado de img1 para img2
   ];
