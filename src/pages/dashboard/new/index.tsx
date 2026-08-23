@@ -11,6 +11,7 @@ import { v4 as uuidV4 } from 'uuid'
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../services/supabaseConnection'
 
+// 🔥 ADICIONAMOS "categoria" ao schema (obrigatório)
 const schema = z.object({
   name: z.string().nonempty("O campo nome é obrigatório"),
   model: z.string().nonempty("O campo modelo é obrigatório"),
@@ -21,8 +22,8 @@ const schema = z.object({
     .refine((value) => /^(\d{10,11})$/.test(value), {
       message: "Número de telefone inválido (Insira DDD + Número)."
     }),
-  // CAMPO ESTILO ADICIONADO
   estilo: z.string().nonempty("O campo estilo é obrigatório"),
+  categoria: z.string().nonempty("Selecione uma categoria"), // 🔥 NOVO
 });
 
 type FormData = z.infer<typeof schema>;
@@ -117,7 +118,8 @@ export function New() {
           whatsapp: data.whatsapp,
           uid: user?.id || user?.uid || "anonimo",
           images: roupaListImages,
-          estilo: data.estilo, // CAMPO ESTILO INSERIDO
+          estilo: data.estilo,
+          categoria: data.categoria, // 🔥 INSERIMOS A CATEGORIA
         });
 
       if (error) {
@@ -241,7 +243,7 @@ export function New() {
             </div>
           </div>
 
-          {/* CAMPO ESTILO ADICIONADO AQUI */}
+          {/* CAMPO ESTILO (já existente) */}
           <div className="w-full">
             <p className="mb-2 font-medium">Estilo</p>
             <Input
@@ -251,6 +253,27 @@ export function New() {
               error={errors.estilo?.message}
               register={register}
             />
+          </div>
+
+          {/* 🔥 CAMPO CATEGORIA (NOVO) */}
+          <div className="w-full">
+            <p className="mb-2 font-medium">Categoria</p>
+            <select
+              {...register('categoria')}
+              className="w-full border-2 rounded-md h-11 px-2 bg-white border-zinc-300 focus:border-sky-500 outline-none transition-colors"
+            >
+              <option value="">Selecione uma categoria</option>
+              <option value="Shorts">Shorts</option>
+              <option value="Acessório">Acessório</option>
+              <option value="Camisa">Camisa</option>
+              <option value="Calça">Calça</option>
+              <option value="Cueca">Cueca</option>
+            </select>
+            {errors.categoria && (
+              <span className="text-red-500 text-xs mt-1 block">
+                {errors.categoria.message}
+              </span>
+            )}
           </div>
 
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">

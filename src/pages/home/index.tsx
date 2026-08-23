@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Container } from "../../components/container";
 import { supabase } from '../../services/supabaseConnection'; 
 import { Link } from 'react-router-dom'; 
 import camisaImg from '../../assets/NK.jpg'; 
-import { Carrossel } from '../../components/carrosel'; // 1. IMPORTAÇÃO DO SEU CARROSSEL (Ajuste a pasta se necessário)
+import { Carrossel } from '../../components/carrosel';
+import { FiSearch, FiX } from 'react-icons/fi'; // ícones para os filtros
 
 interface RoupaProps {
   id: string;
@@ -13,7 +14,9 @@ interface RoupaProps {
   price: string | number; 
   images: RoupaImageProps[];
   uid: string;
-  whatsapp: string; 
+  whatsapp: string;
+  estilo: string;
+  categoria: string; // 🔥 NOVO CAMPO
 }
 
 interface RoupaImageProps {
@@ -25,13 +28,39 @@ interface RoupaImageProps {
 export function Home() {
   const [roupas, setRoupas] = useState<RoupaProps[]>([]);
   const [loadImages, setLoadImages] = useState<string[]>([]);
-  const [input, setInput] = useState("")
+  
+  // Estados para filtros
+  const [busca, setBusca] = useState("");
+  const [estilosSelecionados, setEstilosSelecionados] = useState<string[]>([]);
+  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<string[]>([]); // 🔥 NOVO
 
-  async function loadRoupas() {
-    const { data, error } = await supabase
+  // Opções fixas (ALTERADAS AQUI)
+  const estilosDisponiveis = ["Casual", "Esporte", "Esporte Fino"]; // ✅ TROCAS FEITAS
+  const categoriasDisponiveis = ["Shorts", "Acessório", "Camisa", "Calça", "Cueca"]; // 🔥 NOVO
+
+  // Função para buscar roupas com filtros combinados
+  const fetchRoupas = useCallback(async (filtroNome: string, filtroEstilos: string[], filtroCategorias: string[]) => {
+    let query = supabase
       .from('roupas')
       .select('*')
       .order('created_at', { ascending: false });
+
+    // Filtro por nome
+    if (filtroNome.trim() !== '') {
+      query = query.ilike('name', `%${filtroNome}%`);
+    }
+
+    // Filtro por estilos
+    if (filtroEstilos.length > 0) {
+      query = query.in('estilo', filtroEstilos);
+    }
+
+    // 🔥 Filtro por categorias
+    if (filtroCategorias.length > 0) {
+      query = query.in('categoria', filtroCategorias);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Erro ao buscar roupas:", error.message);
@@ -47,23 +76,28 @@ export function Home() {
         marca: item.marca || "Multimarcas", 
         images: item.images || [], 
         uid: item.uid || "",
-        whatsapp: item.whatsapp || ""
+        whatsapp: item.whatsapp || "",
+        estilo: item.estilo || "Não definido",
+        categoria: item.categoria || "Não definida", // 🔥 MAPEIA CATEGORIA
       }));
 
       setRoupas(listRoupas);
 
-      // CORREÇÃO DE BUG: Ativa o carregamento automático para produtos sem imagem em anexo
       listRoupas.forEach(item => {
         if (!item.images || item.images.length === 0) {
           handleImageLoad(item.id);
         }
       });
     }
-  }
+  }, []);
 
+  // Disparar quando qualquer filtro mudar
   useEffect(() => {
-    loadRoupas();
+    fetchRoupas(busca, estilosSelecionados, categoriasSelecionadas);
+  }, [busca, estilosSelecionados, categoriasSelecionadas, fetchRoupas]);
 
+  // Inscrever-se em mudanças (DELETE)
+  useEffect(() => {
     const channel = supabase
       .channel('roupas-alteracoes')
       .on(
@@ -78,12 +112,12 @@ export function Home() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []); 
+  }, []);
 
   function handleImageLoad(id: string){
-    setLoadImages((prevImageLoaded) => {
-      if (prevImageLoaded.includes(id)) return prevImageLoaded;
-      return [...prevImageLoaded, id];
+    setLoadImages((prev) => {
+      if (prev.includes(id)) return prev;
+      return [...prev, id];
     });
   }
 
@@ -92,87 +126,122 @@ export function Home() {
     if (typeof price === 'number') {
       return price.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     }
-
     let cleanPrice = price.replace(/\s/g, '').replace(/[R\$]/g, '').trim();
-
     if (cleanPrice.includes('.') && cleanPrice.includes(',')) {
       cleanPrice = cleanPrice.replace(/\./g, '').replace(',', '.');
     } else {
       cleanPrice = cleanPrice.replace(',', '.');
     }
-
     const parsedPrice = Number(cleanPrice);
     if (isNaN(parsedPrice)) return String(price);
-
     return parsedPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
   }
 
-  async function handleSearchRoupa(){
-    if(input === ''){
-      loadRoupas();
-      return;
-    }
-
-    setRoupas([]);
-    setLoadImages([]);
-
-    const { data, error } = await supabase
-      .from('roupas')
-      .select('*')
-      .ilike('name', `%${input}%`) 
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error("Erro ao buscar termo:", error.message);
-      return;
-    }
-
-    if (data) {
-      const listRoupas = data.map((item: any) => ({
-        id: item.id,
-        name: item.name || "Sem nome",
-        price: item.price, 
-        model: item.model || "Padrão", 
-        marca: item.marca || "Multimarcas", 
-        images: item.images || [], 
-        uid: item.uid || "",
-        whatsapp: item.whatsapp || ""
-      }));
-
-      setRoupas(listRoupas);
-
-      listRoupas.forEach(item => {
-        if (!item.images || item.images.length === 0) {
-          handleImageLoad(item.id);
-        }
-      });
-    }
+  // Funções toggle
+  function toggleEstilo(estilo: string) {
+    setEstilosSelecionados((prev) =>
+      prev.includes(estilo) ? prev.filter((e) => e !== estilo) : [...prev, estilo]
+    );
   }
+
+  function toggleCategoria(categoria: string) {
+    setCategoriasSelecionadas((prev) =>
+      prev.includes(categoria) ? prev.filter((c) => c !== categoria) : [...prev, categoria]
+    );
+  }
+
+  function limparFiltros() {
+    setEstilosSelecionados([]);
+    setCategoriasSelecionadas([]);
+    setBusca("");
+  }
+
+  // Contar filtros ativos
+  const totalFiltrosAtivos = estilosSelecionados.length + categoriasSelecionadas.length + (busca.trim() !== '' ? 1 : 0);
 
   return (
     <>
-      {/* 2. O CARROSSEL ADICIONADO AQUI (Fora do Container para ocupar toda a largura da tela) */}
       <div className="w-full mb-6">
         <Carrossel />
       </div>
 
       <Container>
-        <section className="bg-sky-400 p-4 rounded-lg w-full max-w-3xl mx-auto flex justify-center items-center gap-2">
-          <input 
-            placeholder="Digite o nome da roupa.."
-            className="w-full border-2 rounded-lg h-9 px-3 text-black"
-            value={input}
-            onChange={ (e) => setInput(e.target.value)}
-          />
-          <button 
-            className="bg-black h-9 px-8 rounded-lg text-white font-medium text-lg"
-            onClick={handleSearchRoupa}
-          >
-            Buscar
-          </button> 
+        {/* Barra de busca + filtros estilizados */}
+        <section className="bg-gradient-to-r from-sky-500 to-blue-600 p-5 rounded-2xl shadow-lg w-full max-w-4xl mx-auto">
+          {/* Linha de busca */}
+          <div className="flex items-center gap-2 bg-white rounded-full px-4 py-1 shadow-inner">
+            <FiSearch size={20} className="text-zinc-400" />
+            <input 
+              placeholder="Buscar pelo nome da roupa..."
+              className="flex-1 h-10 bg-transparent outline-none text-black placeholder-zinc-400"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+            {busca && (
+              <button 
+                onClick={() => setBusca("")} 
+                className="text-zinc-400 hover:text-zinc-600"
+              >
+                <FiX size={18} />
+              </button>
+            )}
+            <button 
+              className="bg-black hover:bg-zinc-800 text-white font-medium px-6 py-1.5 rounded-full transition"
+              onClick={() => fetchRoupas(busca, estilosSelecionados, categoriasSelecionadas)}
+            >
+              Buscar
+            </button>
+          </div>
+
+          {/* Filtros: Estilo + Categoria */}
+          <div className="mt-4 flex flex-wrap items-center gap-4 justify-center text-white">
+            {/* Estilos */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">Estilo</span>
+              {estilosDisponiveis.map((estilo) => (
+                <label key={estilo} className="flex items-center gap-1.5 text-sm cursor-pointer bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full transition">
+                  <input
+                    type="checkbox"
+                    checked={estilosSelecionados.includes(estilo)}
+                    onChange={() => toggleEstilo(estilo)}
+                    className="accent-black w-4 h-4"
+                  />
+                  {estilo}
+                </label>
+              ))}
+            </div>
+
+            <span className="text-white/30">|</span>
+
+            {/* Categorias */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">Categoria</span>
+              {categoriasDisponiveis.map((categoria) => (
+                <label key={categoria} className="flex items-center gap-1.5 text-sm cursor-pointer bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full transition">
+                  <input
+                    type="checkbox"
+                    checked={categoriasSelecionadas.includes(categoria)}
+                    onChange={() => toggleCategoria(categoria)}
+                    className="accent-black w-4 h-4"
+                  />
+                  {categoria}
+                </label>
+              ))}
+            </div>
+
+            {/* Limpar filtros */}
+            {totalFiltrosAtivos > 0 && (
+              <button
+                onClick={limparFiltros}
+                className="flex items-center gap-1 text-sm bg-red-500/80 hover:bg-red-600 text-white px-4 py-1.5 rounded-full transition"
+              >
+                <FiX size={14} /> Limpar ({totalFiltrosAtivos})
+              </button>
+            )}
+          </div>
         </section>
 
-        <h1 className="font-bold text-center mt-6 text-2xl mb-4 text-white">
+        <h1 className="font-bold text-center mt-8 text-2xl mb-4 text-white">
           Roupas de multimarcas em todo Brasil
         </h1>
 
@@ -183,14 +252,12 @@ export function Home() {
               key={roupa.id} 
               className="block h-full transition-transform duration-300 hover:scale-102"
             >
-              <section 
-                className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col gap-3 h-full select-none"
-              >
+              <section className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col gap-3 h-full select-none">
+                {/* Imagem com skeleton */}
                 <div 
                   className="w-full h-40 bg-zinc-900 rounded-lg animate-pulse"
                   style={{ display: loadImages.includes(roupa.id) ? "none" : "block" }}
                 />
-
                 <div 
                   className="bg-zinc-900 rounded-lg p-2 flex items-center justify-center overflow-hidden"
                   style={{ display: loadImages.includes(roupa.id) ? "flex" : "none" }}
@@ -199,7 +266,7 @@ export function Home() {
                     src={roupa.images && roupa.images.length > 0 ? roupa.images[0].url : camisaImg}
                     alt={roupa.name} 
                     className="w-40 h-40 object-contain mx-auto" 
-                    onLoad={ () => handleImageLoad(roupa.id) }
+                    onLoad={() => handleImageLoad(roupa.id)}
                     style={{ display: loadImages.includes(roupa.id) ? "block" : "none" }}
                   />
                 </div>
@@ -214,13 +281,24 @@ export function Home() {
                   </div>
                 </div>
 
-                <div className="text-xs text-zinc-500 border-t border-zinc-900 pt-2 mt-auto">
+                <div className="text-xs text-zinc-500 border-t border-zinc-900 pt-2 mt-auto flex justify-between">
                   <span>{roupa.marca}</span>
+                  <span className="text-zinc-400">Estilo: {roupa.estilo}</span>
+                </div>
+                {/* 🔥 EXIBE A CATEGORIA (opcional) */}
+                <div className="text-xs text-zinc-600 border-t border-zinc-800 pt-1 flex justify-end">
+                  <span className="bg-zinc-800 px-2 py-0.5 rounded-full">Categoria: {roupa.categoria}</span>
                 </div>
               </section>
             </Link>
           ))}
         </main>
+
+        {roupas.length === 0 && (
+          <div className="text-center py-10 text-zinc-400">
+            <p>Nenhuma roupa encontrada para os filtros selecionados.</p>
+          </div>
+        )}
       </Container>
     </>
   ); 
