@@ -155,29 +155,33 @@ export function Home() {
 
       <Container>
         <section className="bg-gradient-to-r from-sky-500 to-blue-600 p-5 rounded-2xl shadow-lg w-full max-w-4xl mx-auto">
-          <div className="flex items-center gap-2 bg-white rounded-full px-4 py-1 shadow-inner">
-            <FiSearch size={20} className="text-zinc-400" />
-            <input 
-              placeholder="Buscar pelo nome da roupa..."
-              className="flex-1 h-10 bg-transparent outline-none text-black placeholder-zinc-400"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-            {busca && (
-              <button 
-                onClick={() => setBusca("")} 
-                className="text-zinc-400 hover:text-zinc-600"
-              >
-                <FiX size={18} />
-              </button>
-            )}
-            <button 
-              className="bg-black hover:bg-zinc-800 text-white font-medium px-6 py-1.5 rounded-full transition"
-              onClick={() => fetchRoupas(busca, estilosSelecionados, categoriasSelecionadas)}
-            >
-              Buscar
-            </button>
-          </div>
+          
+          <div className="flex items-center gap-2 bg-white rounded-full px-2 sm:px-4 py-1 shadow-inner">
+  <FiSearch size={18} className="text-zinc-400 flex-shrink-0 sm:text-xl" />
+  
+  <input
+    placeholder="Buscar..."
+    className="flex-1 h-8 sm:h-10 bg-transparent outline-none text-black placeholder-zinc-400 text-sm sm:text-base min-w-[60px]"
+    value={busca}
+    onChange={(e) => setBusca(e.target.value)}
+  />
+  
+  {busca && (
+    <button
+      onClick={() => setBusca("")}
+      className="text-zinc-400 hover:text-zinc-600 flex-shrink-0"
+    >
+      <FiX size={16} className="sm:text-xl" />
+    </button>
+  )}
+  
+  <button
+    className="bg-black hover:bg-zinc-800 text-white font-medium px-3 sm:px-6 py-1 sm:py-1.5 rounded-full transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+    onClick={() => fetchRoupas(busca, estilosSelecionados, categoriasSelecionadas)}
+  >
+    Buscar
+  </button>
+</div>
 
           {/* FILTROS: ALTERADO PARA FICAR ESTILOS EM CIMA E CATEGORIAS EM BAIXO NO CELULAR */}
           <div className="mt-4 flex flex-col sm:flex-row items-center gap-4 justify-center text-white">
