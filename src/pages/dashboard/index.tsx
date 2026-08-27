@@ -1,22 +1,20 @@
 import { useEffect, useState, useContext } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Container } from "../../components/container";
 import { DashboardHeader } from '../../components/panelheader';
-import { FiTrash2 } from 'react-icons/fi';
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { supabase } from '../../services/supabaseConnection';
 import { AuthContext } from '../../contexts/AuthContext';
 
-// Importe sua imagem padrão (caso não tenha)
-// import camisaImg from '../../assets/camisa.png';
-
 interface RoupaProps {
-  id: string | number; 
+  id: string | number;
   name: string;
-  model: string; 
+  model: string;
   marca: string;
   price: string | number;
   images: ImageRoupaProps[];
   uid: string;
-  estilo: string; // 🔥 NOVO CAMPO
+  estilo: string;
 }
 
 interface ImageRoupaProps {
@@ -28,30 +26,28 @@ interface ImageRoupaProps {
 export function Dashboard() {
   const [roupas, setRoupas] = useState<RoupaProps[]>([]);
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(() => {
-    async function loadRoupas() {
-      if (!user?.uid && !user?.uid) return;
-      const currentUid = user?.uid || user?.uid;
+  async function loadRoupas() {
+    if (!user?.uid) return;
+    const { data, error } = await supabase
+      .from('roupas')
+      .select('*')
+      .eq('uid', user.uid)
+      .order('created_at', { ascending: false });
 
-      const { data, error } = await supabase
-        .from('roupas')
-        .select('*')
-        .eq('uid', currentUid)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error("Erro ao buscar roupas:", error.message);
-        return;
-      }
-
-      if (data) {
-        setRoupas(data as RoupaProps[]);
-      }
+    if (error) {
+      console.error("Erro ao buscar roupas:", error.message);
+      return;
     }
+    if (data) setRoupas(data as RoupaProps[]);
+  }
 
+  // 🔥 Recarrega SEMPRE que a URL mudar (location inteiro)
+  useEffect(() => {
     loadRoupas();
-  }, [user]);
+  }, [user, location]); // <-- location inteiro
 
   async function handleDeleteRoupa(roupa: RoupaProps) {
     const confirmou = window.confirm(`Deseja mesmo deletar "${roupa.name}"?`);
@@ -81,6 +77,10 @@ export function Dashboard() {
     }
   }
 
+  function handleEditRoupa(id: string | number) {
+    navigate(`/dashboard/edit/${id}`);
+  }
+
   function formatPrice(price: string | number) {
     if (!price) return "0,00";
     if (typeof price === 'number') return price.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -97,13 +97,17 @@ export function Dashboard() {
   return (
     <Container>
       <DashboardHeader/>
-      
-      {/* NENHUM FILTRO AQUI, APENAS A LISTAGEM COMPLETA */}
-
       <main className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
         {roupas.map((roupa) => (
           <section key={roupa.id} className="w-full bg-white rounded-lg relative pb-4 shadow-sm border border-zinc-100 flex flex-col justify-between">
             <div>
+              <button
+                onClick={() => handleEditRoupa(roupa.id)}
+                className="absolute bg-white w-10 h-10 rounded-full flex items-center justify-center top-2 right-12 shadow-md hover:bg-zinc-50 transition-colors z-20 cursor-pointer"
+                type="button"
+              >
+                <FiEdit2 size={20} color="#3B82F6" />
+              </button>
               <button
                 onClick={() => handleDeleteRoupa(roupa)}
                 className="absolute bg-white w-10 h-10 rounded-full flex items-center justify-center top-2 right-2 shadow-md hover:bg-zinc-50 transition-colors z-20 cursor-pointer"
@@ -114,7 +118,7 @@ export function Dashboard() {
               
               <div className="bg-zinc-900 rounded-t-lg p-2 h-48 flex items-center justify-center overflow-hidden">
                 <img 
-                  src={roupa.images && roupa.images.length > 0 ? roupa.images[0].url : 'caminho/para/imagem-padrao.jpg'} 
+                  src={roupa.images && roupa.images.length > 0 ? roupa.images[0].url : '/caminho-padrao.jpg'} 
                   alt={roupa.name} 
                   className="w-40 h-40 object-contain mx-auto transition-transform duration-300 hover:scale-105" 
                 />
