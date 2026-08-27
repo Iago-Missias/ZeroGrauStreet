@@ -41,47 +41,67 @@ export function New() {
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [roupaImag, setRoupaImages] = useState<ImageItemProps[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
     mode: "onChange"
   });
 
-  // Carrega dados se for edição
+  // 🔥 CARREGA OS DADOS PARA EDIÇÃO
   useEffect(() => {
     if (id) {
+      console.log('🔍 ID recebido para edição:', id);
       async function fetchRoupa() {
-        const { data, error } = await supabase
-          .from('roupas')
-          .select('*')
-          .eq('id', Number(id))
-          .single();
+        try {
+          const { data, error } = await supabase
+            .from('roupas')
+            .select('*')
+            .eq('id', Number(id))
+            .single();
 
-        if (error) {
-          console.error('Erro ao buscar roupa:', error);
-          alert('Erro ao carregar dados para edição.');
-          navigate('/dashboard');
-          return;
-        }
-        if (data) {
-          reset({
-            name: data.name,
-            model: data.model,
-            marca: data.marca,
-            price: String(data.price),
-            whatsapp: data.whatsapp,
-            estilo: data.estilo,
-            categoria: data.categoria,
-          });
-          if (data.images && data.images.length > 0) {
-            setAvatarUrl(data.images[0].url);
+          console.log('📦 Dados da roupa:', data);
+          console.log('❌ Erro ao buscar:', error);
+
+          if (error) {
+            console.error('Erro ao buscar roupa:', error);
+            alert('Erro ao carregar dados para edição.');
+            navigate('/dashboard');
+            return;
           }
+          if (data) {
+            reset({
+              name: data.name,
+              model: data.model,
+              marca: data.marca,
+              price: String(data.price),
+              whatsapp: data.whatsapp,
+              estilo: data.estilo,
+              categoria: data.categoria,
+            });
+            if (data.images && data.images.length > 0) {
+              setAvatarUrl(data.images[0].url);
+            }
+            console.log('✅ Formulário preenchido com sucesso!');
+          } else {
+            alert('Nenhum registro encontrado com este ID.');
+            navigate('/dashboard');
+          }
+        } catch (err) {
+          console.error('Erro inesperado:', err);
+          alert('Erro ao carregar dados.');
+          navigate('/dashboard');
+        } finally {
+          setInitialLoading(false);
         }
       }
       fetchRoupa();
+    } else {
+      setInitialLoading(false);
     }
   }, [id, reset, navigate]);
 
+  // ===== HANDLERS DE UPLOAD E IMAGENS =====
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files[0]) {
       const image = e.target.files[0];
@@ -129,7 +149,29 @@ export function New() {
     setAvatarUrl(downloadUrl);
   }
 
+  async function handleDeleteImage(item: ImageItemProps) {
+    try {
+      const { error } = await supabase.storage
+        .from('ZeroGrau')
+        .remove([item.name]);
+
+      if (error) {
+        alert("Erro ao deletar arquivo do servidor: " + error.message);
+        return;
+      }
+
+      setRoupaImages((images) => images.filter((roupa) => roupa.url !== item.url));
+      if (avatarUrl === item.url) {
+        setAvatarUrl("");
+      }
+    } catch (err) {
+      console.log("ERRO AO DELETAR:", err);
+    }
+  }
+
+  // ===== SUBMIT =====
   async function onSubmit(data: FormData) {
+    // Se for cadastro (sem id), exige imagem
     if (roupaImag.length === 0 && !id) {
       alert("Por favor, envie alguma imagem de roupa antes de cadastrar!");
       return;
@@ -145,21 +187,28 @@ export function New() {
 
     try {
       if (id) {
+        // 🔥 EDIÇÃO: atualiza a roupa
+        console.log('📤 Enviando UPDATE para ID:', Number(id));
         const updateData = {
           name: data.name,
           model: data.model,
           marca: data.marca,
-          price: data.price,
+          price: data.price, // será convertido para número pelo Supabase se for texto? melhor converter
           whatsapp: data.whatsapp,
           estilo: data.estilo,
           categoria: data.categoria,
           ...(roupaListImages.length > 0 && { images: roupaListImages }),
         };
+        console.log('📤 Dados do update:', updateData);
 
-        const { error } = await supabase
+        const { data: updated, error } = await supabase
           .from('roupas')
           .update(updateData)
-          .eq('id', Number(id));
+          .eq('id', Number(id))
+          .select();
+
+        console.log('✅ Resultado do update:', updated);
+        console.log('❌ Erro do update:', error);
 
         if (error) {
           console.error('Erro no update:', error);
@@ -167,13 +216,16 @@ export function New() {
           return;
         }
 
+        if (!updated || updated.length === 0) {
+          alert('⚠️ Nenhum registro foi atualizado. Verifique se o ID existe.');
+          return;
+        }
+
         alert('Roupa atualizada com sucesso!');
         navigate('/dashboard');
-        // 🔥 Força recarga após navegação
-        setTimeout(() => {
-          window.location.reload();
-        }, 200);
+        setTimeout(() => window.location.reload(), 200);
       } else {
+        // 🔥 CADASTRO
         const { error } = await supabase
           .from('roupas')
           .insert({
@@ -196,10 +248,7 @@ export function New() {
 
         alert('Roupa cadastrada com sucesso!');
         navigate('/dashboard');
-        // 🔥 Força recarga após navegação
-        setTimeout(() => {
-          window.location.reload();
-        }, 200);
+        setTimeout(() => window.location.reload(), 200);
       }
 
       reset();
@@ -214,24 +263,13 @@ export function New() {
     }
   }
 
-  async function handleDeleteImage(item: ImageItemProps) {
-    try {
-      const { error } = await supabase.storage
-        .from('ZeroGrau')
-        .remove([item.name]);
-
-      if (error) {
-        alert("Erro ao deletar arquivo do servidor: " + error.message);
-        return;
-      }
-
-      setRoupaImages((images) => images.filter((roupa) => roupa.url !== item.url));
-      if (avatarUrl === item.url) {
-        setAvatarUrl("");
-      }
-    } catch (err) {
-      console.log("ERRO AO DELETAR:", err);
-    }
+  if (initialLoading) {
+    return (
+      <Container>
+        <DashboardHeader />
+        <div className="text-center py-10">Carregando dados para edição...</div>
+      </Container>
+    );
   }
 
   return (

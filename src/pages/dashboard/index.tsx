@@ -41,13 +41,14 @@ export function Dashboard() {
       console.error("Erro ao buscar roupas:", error.message);
       return;
     }
-    if (data) setRoupas(data as RoupaProps[]);
+    if (data) {
+      setRoupas(data as RoupaProps[]);
+    }
   }
 
-  // 🔥 Recarrega SEMPRE que a URL mudar (location inteiro)
   useEffect(() => {
     loadRoupas();
-  }, [user, location]); // <-- location inteiro
+  }, [user, location.key]);
 
   async function handleDeleteRoupa(roupa: RoupaProps) {
     const confirmou = window.confirm(`Deseja mesmo deletar "${roupa.name}"?`);
@@ -77,6 +78,7 @@ export function Dashboard() {
     }
   }
 
+  // ✅ CORRIGIDO: caminho completo
   function handleEditRoupa(id: string | number) {
     navigate(`/dashboard/edit/${id}`);
   }
@@ -118,7 +120,7 @@ export function Dashboard() {
               
               <div className="bg-zinc-900 rounded-t-lg p-2 h-48 flex items-center justify-center overflow-hidden">
                 <img 
-                  src={roupa.images && roupa.images.length > 0 ? roupa.images[0].url : '/caminho-padrao.jpg'} 
+                  src={roupa.images && roupa.images.length > 0 ? roupa.images[0].url : 'caminho/para/imagem-padrao.jpg'} 
                   alt={roupa.name} 
                   className="w-40 h-40 object-contain mx-auto transition-transform duration-300 hover:scale-105" 
                 />
