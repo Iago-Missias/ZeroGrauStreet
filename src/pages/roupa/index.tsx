@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Container } from '../../components/container'
-import { FaWhatsapp } from 'react-icons/fa'
-import { useParams, useNavigate } from 'react-router-dom' // Adicionado useNavigate
-import { supabase as db } from '../../services/supabaseConnection' 
+import { FaWhatsapp, FaInstagram } from 'react-icons/fa'
+import { useParams, useNavigate } from 'react-router-dom'
+import { supabase as db } from '../../services/supabaseConnection'
+import { Helmet } from 'react-helmet-async' // Adicionado
 
 interface ImagesRoupasProps {
   uid: string;
@@ -17,17 +18,36 @@ interface RoupaProps {
   price: string | number;
   marca: string;
   uid: string;
-  whatsapp: string; 
+  whatsapp: string;
+  instagram?: string;
   images: ImagesRoupasProps[];
   created?: string; 
 }
 
 export function RoupaDetail() {
   const { id } = useParams();
-  const navigate = useNavigate(); // Instanciando o navegador
+  const navigate = useNavigate();
   const [roupa, setRoupa] = useState<RoupaProps | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string>('');
+
+  const generateWhatsAppMessage = () => {
+    if (!roupa) {
+      return encodeURIComponent('Olá, vi um produto no site e gostaria de mais informações!');
+    }
+    
+    const currentUrl = window.location.href;
+    
+    const message = `Olá, vi esse ${roupa.name} e fiquei interessado! 
+    
+📌 Link do produto: ${currentUrl}
+
+💰 Preço: R$ ${roupa.price}
+👕 Modelo: ${roupa.modelo}
+🏷️ Marca: ${roupa.marca}`;
+    
+    return encodeURIComponent(message);
+  };
 
   useEffect(() => {
     async function loadRoupa() {
@@ -41,12 +61,11 @@ export function RoupaDetail() {
           .from('roupas')
           .select('*')
           .eq('id', id)
-          .single(); 
+          .single();
 
-        // Se houver erro no banco ou o registro não existir (data nulo)
         if (error || !data) {
           console.error("Produto não encontrado ou erro:", error?.message);
-          navigate('/', { replace: true }); // Redireciona para a Home
+          navigate('/', { replace: true });
           return;
         }
 
@@ -58,14 +77,14 @@ export function RoupaDetail() {
         }
       } catch (err) {
         console.error("Erro na requisição:", err);
-        navigate('/', { replace: true }); // Redireciona em caso de falha crítica
+        navigate('/', { replace: true });
       } finally {
         setLoading(false);
       }
     }
 
     loadRoupa();
-  }, [id, navigate]); // Adicionado navigate nas dependências
+  }, [id, navigate]);
 
   if (loading) {
     return (
@@ -75,80 +94,119 @@ export function RoupaDetail() {
     );
   }
 
-  // Se chegou aqui e não tem roupa, redireciona por segurança
   if (!roupa) {
     navigate('/', { replace: true });
     return null;
   }
 
+  // Pega a primeira imagem para usar no OG
+  const ogImage = roupa.images && roupa.images.length > 0 
+    ? roupa.images[0].url 
+    : 'https://seusite.com/imagem-padrao.jpg'; // Coloque uma imagem padrão
+
   return (
-    <Container>
-      {/* Área da Imagem Principal em Destaque */}
-      {activeImage && (
-        <div className="w-full max-w-3xl mx-auto my-4 bg-white rounded-lg p-2 shadow-sm">
-          <div className="w-full h-96 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
-            <img 
-              src={activeImage} 
-              alt={roupa.name}
-              className="w-full h-full object-contain transition-all duration-300" 
-            />
-          </div>
+    <>
+      {/* Meta tags para compartilhamento */}
+      <Helmet>
+        <title>{roupa.name} - {roupa.marca}</title>
+        <meta property="og:title" content={`${roupa.name} - ${roupa.marca}`} />
+        <meta property="og:description" content={`${roupa.modelo} - R$ ${roupa.price} - Marca: ${roupa.marca}`} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:url" content={window.location.href} />
+        <meta property="og:type" content="product" />
+        <meta property="og:site_name" content="Sua Loja" />
+        
+        {/* Para WhatsApp e Facebook */}
+        <meta property="og:image:type" content="image/jpeg" />
+        
+        {/* Para Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${roupa.name} - ${roupa.marca}`} />
+        <meta name="twitter:description" content={`${roupa.modelo} - R$ ${roupa.price}`} />
+        <meta name="twitter:image" content={ogImage} />
+      </Helmet>
 
-          {/* Miniaturas abaixo da foto principal para clique */}
-          {roupa.images && roupa.images.length > 1 && (
-            <div className="flex gap-2 mt-4 overflow-x-auto pb-2 justify-center">
-              {roupa.images.map((image, index) => (
-                <button
-                  key={`${image.uid}-${index}`}
-                  onClick={() => setActiveImage(image.url)} 
-                  className={`w-20 h-20 rounded-md overflow-hidden border-2 bg-gray-50 flex-shrink-0 transition-all ${
-                    activeImage === image.url ? 'border-blue-500 scale-105' : 'border-gray-200 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img 
-                    src={image.url} 
-                    alt="Miniatura" 
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
+      <Container>
+        {activeImage && (
+          <div className="w-full max-w-3xl mx-auto my-4 bg-white rounded-lg p-2 shadow-sm">
+            <div className="w-full h-96 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
+              <img 
+                src={activeImage} 
+                alt={roupa.name}
+                className="w-full h-full object-contain transition-all duration-300" 
+              />
             </div>
-          )}
-        </div>
-      )}
-      
-      <main className='w-full bg-white rounded-lg p-6 my-4 shadow-sm'>
-        <div className='flex flex-col sm:flex-row mb-4 items-center justify-between gap-2'>
-          <h1 className='font-bold text-3xl text-black'>{roupa.name}</h1>
-          <h1 className='font-bold text-3xl text-black'>R$ {roupa.price}</h1>
-        </div>
-        
-        <p className="text-gray-700 mb-4">{roupa.modelo}</p>
-        
-        <div className='flex w-full gap-6 my-4 text-black border-t border-b py-4 border-gray-100'>
-          <div>
-            <p className="text-gray-400 text-sm">Marca</p>
-            <strong className="text-lg">{roupa.marca}</strong>
-          </div>
-          <div>
-            <p className="text-gray-400 text-sm">Modelo</p>
-            <strong className="text-lg">{roupa.modelo}</strong>
-          </div>
-        </div>
 
-        {/* Botão do WhatsApp */}
-        {roupa.whatsapp && (
-          <a
-            href={`https://api.whatsapp.com/send?phone=${roupa?.whatsapp}&text=Olá vi esse ${roupa?.name} e fiquei interessado`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-green-500 text-white flex items-center justify-center gap-2 p-3 rounded-lg font-bold hover:bg-green-600 transition-colors w-full text-center"
-          >
-            <FaWhatsapp size={20} />
-            Falar com o vendedor
-          </a>
+            {roupa.images && roupa.images.length > 1 && (
+              <div className="flex gap-2 mt-4 overflow-x-auto pb-2 justify-center">
+                {roupa.images.map((image, index) => (
+                  <button
+                    key={`${image.uid}-${index}`}
+                    onClick={() => setActiveImage(image.url)} 
+                    className={`w-20 h-20 rounded-md overflow-hidden border-2 bg-gray-50 flex-shrink-0 transition-all ${
+                      activeImage === image.url ? 'border-blue-500 scale-105' : 'border-gray-200 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img 
+                      src={image.url} 
+                      alt="Miniatura" 
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
-      </main>
-    </Container>
+        
+        <main className='w-full bg-white rounded-lg p-6 my-4 shadow-sm'>
+          <div className='flex flex-col sm:flex-row mb-4 items-center justify-between gap-2'>
+            <h1 className='font-bold text-3xl text-black'>{roupa.name}</h1>
+            <h1 className='font-bold text-3xl text-black'>R$ {roupa.price}</h1>
+          </div>
+          
+          <p className="text-gray-700 mb-4">{roupa.modelo}</p>
+          
+          <div className='flex w-full gap-6 my-4 text-black border-t border-b py-4 border-gray-100'>
+            <div>
+              <p className="text-gray-400 text-sm">Marca</p>
+              <strong className="text-lg">{roupa.marca}</strong>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Modelo</p>
+              <strong className="text-lg">{roupa.modelo}</strong>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {roupa.whatsapp && (
+              <a
+                href={`https://api.whatsapp.com/send?phone=${roupa.whatsapp}&text=${generateWhatsAppMessage()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-green-500 text-white flex items-center justify-center gap-2 p-3 rounded-lg font-bold hover:bg-green-600 transition-colors w-full text-center"
+              >
+                <FaWhatsapp size={20} />
+                Falar com o vendedor
+              </a>
+            )}
+
+            {roupa.instagram && (
+              <a
+                href={roupa.instagram.startsWith('http') ? roupa.instagram : `https://instagram.com/${roupa.instagram.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white flex items-center justify-center gap-2 p-3 rounded-lg font-bold hover:opacity-90 transition-opacity w-full text-center"
+              >
+                <FaInstagram size={20} />
+                Ver no Instagram
+              </a>
+            )}
+          </div>
+        </main>
+      </Container>
+    </>
   )
 }
