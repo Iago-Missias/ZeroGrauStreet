@@ -31,14 +31,23 @@ export function RoupaDetail() {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string>('');
 
-  // Função para gerar o link do WhatsApp CORRIGIDA
-  const getWhatsAppLink = () => {
-    if (!roupa) return '#';
+  // Função para abrir o WhatsApp com a mensagem
+  const handleWhatsAppClick = () => {
+    if (!roupa) return;
     
+    // Pega a URL atual
     const currentUrl = window.location.href;
     
-    // Mensagem completa com link
-    const message = `Olá, vi esse ${roupa.name} e fiquei interessado! 
+    // Formata o número (remove espaços, parênteses, etc.)
+    let phoneNumber = roupa.whatsapp.replace(/\D/g, ''); // Remove tudo que não é número
+    
+    // Remove o 55 se já tiver
+    if (phoneNumber.startsWith('55')) {
+      phoneNumber = phoneNumber.substring(2);
+    }
+    
+    // Mensagem completa
+    const message = `Olá, vi esse ${roupa.name} e fiquei interessado!
     
 📌 Link do produto: ${currentUrl}
 
@@ -47,8 +56,14 @@ export function RoupaDetail() {
 🏷️ Marca: ${roupa.marca}
 🆔 Código: ${roupa.id}`;
     
+    // Codifica a mensagem para URL
     const encodedMessage = encodeURIComponent(message);
-    return `https://api.whatsapp.com/send?phone=${roupa.whatsapp}&text=${encodedMessage}`;
+    
+    // Cria o link do WhatsApp
+    const whatsappLink = `https://api.whatsapp.com/send?phone=55${phoneNumber}&text=${encodedMessage}`;
+    
+    // Abre em nova aba
+    window.open(whatsappLink, '_blank');
   };
 
   useEffect(() => {
@@ -179,15 +194,13 @@ export function RoupaDetail() {
           <div className="flex flex-col gap-3">
             {/* Botão do WhatsApp CORRIGIDO */}
             {roupa.whatsapp && (
-              <a
-                href={getWhatsAppLink()}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={handleWhatsAppClick}
                 className="bg-green-500 text-white flex items-center justify-center gap-2 p-3 rounded-lg font-bold hover:bg-green-600 transition-colors w-full text-center"
               >
                 <FaWhatsapp size={20} />
                 Falar com o vendedor
-              </a>
+              </button>
             )}
 
             {/* Botão do Instagram */}
