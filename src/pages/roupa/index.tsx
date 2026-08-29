@@ -3,7 +3,7 @@ import { Container } from '../../components/container'
 import { FaWhatsapp, FaInstagram } from 'react-icons/fa'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase as db } from '../../services/supabaseConnection'
-import { Helmet } from 'react-helmet-async' // Adicionado
+import { Helmet } from 'react-helmet-async'
 
 interface ImagesRoupasProps {
   uid: string;
@@ -31,22 +31,24 @@ export function RoupaDetail() {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string>('');
 
-  const generateWhatsAppMessage = () => {
-    if (!roupa) {
-      return encodeURIComponent('Olá, vi um produto no site e gostaria de mais informações!');
-    }
+  // Função para gerar o link do WhatsApp CORRIGIDA
+  const getWhatsAppLink = () => {
+    if (!roupa) return '#';
     
     const currentUrl = window.location.href;
     
+    // Mensagem completa com link
     const message = `Olá, vi esse ${roupa.name} e fiquei interessado! 
     
 📌 Link do produto: ${currentUrl}
 
 💰 Preço: R$ ${roupa.price}
 👕 Modelo: ${roupa.modelo}
-🏷️ Marca: ${roupa.marca}`;
+🏷️ Marca: ${roupa.marca}
+🆔 Código: ${roupa.id}`;
     
-    return encodeURIComponent(message);
+    const encodedMessage = encodeURIComponent(message);
+    return `https://api.whatsapp.com/send?phone=${roupa.whatsapp}&text=${encodedMessage}`;
   };
 
   useEffect(() => {
@@ -99,14 +101,12 @@ export function RoupaDetail() {
     return null;
   }
 
-  // Pega a primeira imagem para usar no OG
   const ogImage = roupa.images && roupa.images.length > 0 
     ? roupa.images[0].url 
-    : 'https://seusite.com/imagem-padrao.jpg'; // Coloque uma imagem padrão
+    : 'https://seusite.com/imagem-padrao.jpg';
 
   return (
     <>
-      {/* Meta tags para compartilhamento */}
       <Helmet>
         <title>{roupa.name} - {roupa.marca}</title>
         <meta property="og:title" content={`${roupa.name} - ${roupa.marca}`} />
@@ -117,11 +117,7 @@ export function RoupaDetail() {
         <meta property="og:url" content={window.location.href} />
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="Sua Loja" />
-        
-        {/* Para WhatsApp e Facebook */}
         <meta property="og:image:type" content="image/jpeg" />
-        
-        {/* Para Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${roupa.name} - ${roupa.marca}`} />
         <meta name="twitter:description" content={`${roupa.modelo} - R$ ${roupa.price}`} />
@@ -181,9 +177,10 @@ export function RoupaDetail() {
           </div>
 
           <div className="flex flex-col gap-3">
+            {/* Botão do WhatsApp CORRIGIDO */}
             {roupa.whatsapp && (
               <a
-                href={`https://api.whatsapp.com/send?phone=${roupa.whatsapp}&text=${generateWhatsAppMessage()}`}
+                href={getWhatsAppLink()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-green-500 text-white flex items-center justify-center gap-2 p-3 rounded-lg font-bold hover:bg-green-600 transition-colors w-full text-center"
@@ -193,6 +190,7 @@ export function RoupaDetail() {
               </a>
             )}
 
+            {/* Botão do Instagram */}
             {roupa.instagram && (
               <a
                 href={roupa.instagram.startsWith('http') ? roupa.instagram : `https://instagram.com/${roupa.instagram.replace('@', '')}`}
