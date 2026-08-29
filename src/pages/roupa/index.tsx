@@ -35,34 +35,38 @@ export function RoupaDetail() {
   const handleWhatsAppClick = () => {
     if (!roupa) return;
     
-    // Pega a URL atual
     const currentUrl = window.location.href;
     
     // Formata o número (remove espaços, parênteses, etc.)
-    let phoneNumber = roupa.whatsapp.replace(/\D/g, ''); // Remove tudo que não é número
+    let phoneNumber = roupa.whatsapp.replace(/\D/g, '');
     
-    // Remove o 55 se já tiver
     if (phoneNumber.startsWith('55')) {
       phoneNumber = phoneNumber.substring(2);
     }
     
-    // Mensagem completa
-    const message = `Olá, vi esse ${roupa.name} e fiquei interessado!
+    // TRATAMENTO: Verifica se os campos existem, se não, usa valores padrão
+    const productName = roupa.name || 'Produto';
+    const productPrice = roupa.price || '0,00';
+    const productModelo = roupa.modelo || 'Não informado';
+    const productMarca = roupa.marca || 'Não informada';
+    const productId = roupa.id || 'N/A';
+    
+    // Mensagem completa com tratamento de undefined
+    const message = `Olá, vi esse ${productName} e fiquei interessado!
     
 📌 Link do produto: ${currentUrl}
 
-💰 Preço: R$ ${roupa.price}
-👕 Modelo: ${roupa.modelo}
-🏷️ Marca: ${roupa.marca}
-🆔 Código: ${roupa.id}`;
+💰 Preço: R$ ${productPrice}
+👕 Modelo: ${productModelo}
+🏷️ Marca: ${productMarca}
+🆔 Código: ${productId}`;
     
-    // Codifica a mensagem para URL
     const encodedMessage = encodeURIComponent(message);
-    
-    // Cria o link do WhatsApp
     const whatsappLink = `https://api.whatsapp.com/send?phone=55${phoneNumber}&text=${encodedMessage}`;
     
-    // Abre em nova aba
+    console.log('Mensagem:', message); // Para debug
+    console.log('Link:', whatsappLink); // Para debug
+    
     window.open(whatsappLink, '_blank');
   };
 
@@ -85,6 +89,8 @@ export function RoupaDetail() {
           navigate('/', { replace: true });
           return;
         }
+
+        console.log('Dados do produto:', data); // Verifica o que está vindo do banco
 
         const roupaData = data as RoupaProps;
         setRoupa(roupaData);
@@ -124,8 +130,8 @@ export function RoupaDetail() {
     <>
       <Helmet>
         <title>{roupa.name} - {roupa.marca}</title>
-        <meta property="og:title" content={`${roupa.name} - ${roupa.marca}`} />
-        <meta property="og:description" content={`${roupa.modelo} - R$ ${roupa.price} - Marca: ${roupa.marca}`} />
+        <meta property="og:title" content={`${roupa.name || 'Produto'} - ${roupa.marca || 'Marca'}`} />
+        <meta property="og:description" content={`${roupa.modelo || 'Modelo'} - R$ ${roupa.price || '0,00'} - Marca: ${roupa.marca || 'Marca'}`} />
         <meta property="og:image" content={ogImage} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -134,8 +140,8 @@ export function RoupaDetail() {
         <meta property="og:site_name" content="Sua Loja" />
         <meta property="og:image:type" content="image/jpeg" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${roupa.name} - ${roupa.marca}`} />
-        <meta name="twitter:description" content={`${roupa.modelo} - R$ ${roupa.price}`} />
+        <meta name="twitter:title" content={`${roupa.name || 'Produto'} - ${roupa.marca || 'Marca'}`} />
+        <meta name="twitter:description" content={`${roupa.modelo || 'Modelo'} - R$ ${roupa.price || '0,00'}`} />
         <meta name="twitter:image" content={ogImage} />
       </Helmet>
 
@@ -145,7 +151,7 @@ export function RoupaDetail() {
             <div className="w-full h-96 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
               <img 
                 src={activeImage} 
-                alt={roupa.name}
+                alt={roupa.name || 'Produto'}
                 className="w-full h-full object-contain transition-all duration-300" 
               />
             </div>
@@ -174,25 +180,24 @@ export function RoupaDetail() {
         
         <main className='w-full bg-white rounded-lg p-6 my-4 shadow-sm'>
           <div className='flex flex-col sm:flex-row mb-4 items-center justify-between gap-2'>
-            <h1 className='font-bold text-3xl text-black'>{roupa.name}</h1>
-            <h1 className='font-bold text-3xl text-black'>R$ {roupa.price}</h1>
+            <h1 className='font-bold text-3xl text-black'>{roupa.name || 'Produto'}</h1>
+            <h1 className='font-bold text-3xl text-black'>R$ {roupa.price || '0,00'}</h1>
           </div>
           
-          <p className="text-gray-700 mb-4">{roupa.modelo}</p>
+          <p className="text-gray-700 mb-4">{roupa.modelo || 'Modelo não informado'}</p>
           
           <div className='flex w-full gap-6 my-4 text-black border-t border-b py-4 border-gray-100'>
             <div>
               <p className="text-gray-400 text-sm">Marca</p>
-              <strong className="text-lg">{roupa.marca}</strong>
+              <strong className="text-lg">{roupa.marca || 'Não informada'}</strong>
             </div>
             <div>
               <p className="text-gray-400 text-sm">Modelo</p>
-              <strong className="text-lg">{roupa.modelo}</strong>
+              <strong className="text-lg">{roupa.modelo || 'Não informado'}</strong>
             </div>
           </div>
 
           <div className="flex flex-col gap-3">
-            {/* Botão do WhatsApp CORRIGIDO */}
             {roupa.whatsapp && (
               <button
                 onClick={handleWhatsAppClick}
@@ -203,7 +208,6 @@ export function RoupaDetail() {
               </button>
             )}
 
-            {/* Botão do Instagram */}
             {roupa.instagram && (
               <a
                 href={roupa.instagram.startsWith('http') ? roupa.instagram : `https://instagram.com/${roupa.instagram.replace('@', '')}`}
